@@ -141,6 +141,6 @@ public class UdfMain {
         DataStream<Row> dataStream = tableEnv.toDataStream(t);
 
         dataStream.print();
-        env.execute("UDF");
+        env.execute("UDF2");
     }
 }
