@@ -6,9 +6,5 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StddevAccumulator {
-    public ListView<Double> nums;
-
-    public StddevAccumulator() {
-        nums = new ListView<>();
-    }
+    public ListView<Double> nums = new ListView<>();
 }
