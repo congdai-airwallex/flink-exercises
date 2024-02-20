@@ -65,7 +65,7 @@ public class StddevTest {
         Table t = tableEnv.sqlQuery(sql);
         tableEnv.toDataStream(t).addSink(new Sink());
         env.execute();
-        Assert.assertEquals(3, Sink.values.size());
+        Assert.assertEquals(4, Sink.values.size());
 
     }
 
