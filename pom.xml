@@ -15,13 +15,6 @@
     </properties>
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka</artifactId>
-            <version>${flink.version}</version>
-            <scope>compile</scope>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -37,7 +30,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- when package to jar, provided -->
+        <!-- when package to jar, provided or running on IDEA, compile-->
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-core -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -45,7 +38,13 @@
             <version>${flink.version}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- when package to jar, annotation following dependency -->
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-kafka</artifactId>
+            <version>${flink.version}</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-java -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -88,7 +87,6 @@
             <version>${flink.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-table-planner-loader -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -96,7 +94,6 @@
             <version>${flink.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-table-runtime -->
         <dependency>
             <groupId>org.apache.flink</groupId>
