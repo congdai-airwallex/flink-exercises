@@ -1,9 +1,7 @@
 package org.example.keyedCoProcess;
 
-import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
@@ -13,52 +11,31 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
-import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 import org.example.model.PayFilterData;
 import org.example.model.PreTxData;
+import org.example.util.FlinkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import com.google.gson.Gson;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 public class KeyedCoProcessMain {
     private static final Logger logger = LoggerFactory.getLogger(KeyedCoProcessMain.class);
 
-    public static void initEnvironment(StreamExecutionEnvironment env) {
-        env.setParallelism(1);
-
-        env.setStateBackend(new HashMapStateBackend());
-        CheckpointConfig checkpointConfig = env.getCheckpointConfig();
-        checkpointConfig.setCheckpointInterval(6000);
-        checkpointConfig.setMinPauseBetweenCheckpoints(1000);
-        checkpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
-        checkpointConfig.setCheckpointStorage("file:///Users/cong.dai/flink-checkpoint/");
-
-        env.setRestartStrategy(RestartStrategies.failureRateRestart(
-                3,
-                org.apache.flink.api.common.time.Time.of(5, TimeUnit.SECONDS),
-                org.apache.flink.api.common.time.Time.of(10, TimeUnit.SECONDS)
-        ));
-    }
-
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRuntimeMode(RuntimeExecutionMode.STREAMING);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
         Configuration configuration = tableEnv.getConfig().getConfiguration();
         configuration.setString("table.exec.state.ttl", "0" );
 
-        initEnvironment(env);
+        FlinkUtil.initEnvironment(env);
 
         KafkaSource<String> preFraudSource = KafkaSource.<String>builder()
                 .setBootstrapServers("localhost:9092")
