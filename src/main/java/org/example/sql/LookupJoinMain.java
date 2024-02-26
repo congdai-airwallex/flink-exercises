@@ -26,6 +26,11 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
  */
 
 /*
+> kafka-console-producer.sh --broker-list localhost:9092 --topic test
+{"orderId":"o1","customerId":"c2","createAt":1708922054455,"total":3}
+ */
+
+/*
 lookup chache: https://nightlies.apache.org/flink/flink-docs-release-1.11/zh/dev/table/connectors/jdbc.html#lookup-cache
 By default, lookup cache is not enabled. You can enable it by setting both lookup.cache.max-rows and lookup.cache.ttl.
 When lookup cache is enabled, each process (i.e. TaskManager) will hold a cache.
@@ -51,7 +56,7 @@ public class LookupJoinMain {
 
         String lookupCache = "";
         if (allowedLookupCache) {
-            lookupCache += " 'lookup.cache.ttl' = '1h', 'lookup.cache.max-rows' = '2', ";
+            lookupCache += " 'lookup.cache.ttl' = '1min', 'lookup.cache.max-rows' = '1000', ";
         }
 
         String createExternalTable = "CREATE TEMPORARY TABLE Customers (" +
