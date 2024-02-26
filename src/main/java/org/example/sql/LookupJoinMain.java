@@ -13,6 +13,21 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+/*
+# postgre
+> CREATE DATABASE customerdb;
+> CREATE TABLE customers (ID SERIAL PRIMARY KEY, customerId VARCHAR(80), country VARCHAR(10), zip VARCHAR(10), age INT, updated BIGINT);
+> \d customers
+------------+-----------------------+----------+----------+---------------------------------------
+ id         | integer               |          | not null | nextval('customers_id_seq'::regclass)
+ customerid | character varying(80) |          |          |
+ country    | character varying(10) |          |          |
+ zip        | character varying(10) |          |          |
+ age        | integer               |          |          |
+ updated    | bigint                |          |          |
+ */
+
+
 public class LookupJoinMain {
     private static final Logger logger = LoggerFactory.getLogger(LookupJoinMain.class);
 
