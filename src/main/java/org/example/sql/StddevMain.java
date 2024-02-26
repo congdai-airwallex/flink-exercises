@@ -110,7 +110,6 @@ public class StddevMain {
                         };
                     }
                 }
-//                WatermarkStrategy.<PreFraudTransactionData>forBoundedOutOfOrderness(Duration.ofSeconds(0))
                         .withTimestampAssigner((event, timestamp) -> event.f0)
                         .withIdleness(Duration.ofSeconds(1))
         );
@@ -144,14 +143,12 @@ public class StddevMain {
                     return x;
                 })
                 .map(x -> {
-                    System.out.println("Map: " + x.amount);
-                    //System.out.println(Double.isNaN(x.amount));
                     return new AmountData(x.id, ((x.amount == null) || Double.isNaN(x.amount)) ? -2.0 : x.amount);
                 });;
 
 
         dataStream.print();
-        env.execute("WindowFlink");
+        env.execute("stddev");
     }
 
     private static <T> T convertRow(final Row row, final Class<T> uc) {

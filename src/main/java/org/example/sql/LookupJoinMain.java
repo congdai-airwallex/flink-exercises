@@ -221,6 +221,6 @@ public class LookupJoinMain {
         DataStream<Row> dataStream = tableEnv.toDataStream(table);
         dataStream.print();
 
-        env.execute("KeyedCoProcessFlink");
+        env.execute("LookupJoin");
     }
 }
