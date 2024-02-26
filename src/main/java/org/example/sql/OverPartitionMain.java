@@ -106,51 +106,9 @@ public class OverPartitionMain {
                         };
                     }
                 }
-//                WatermarkStrategy.<PreFraudTransactionData>forBoundedOutOfOrderness(Duration.ofSeconds(0))
                 .withTimestampAssigner((event, timestamp) -> event.createAt)
                 .withIdleness(Duration.ofSeconds(1))
         );
-
-//        DataStream<PreFraudTransactionData> aStream = eventDataStream.filter(x -> x.paymentAttemptId.equals("a"));
-//        DataStream<PreFraudTransactionData> notaStream = eventDataStream.filter(x -> !x.paymentAttemptId.equals("a"));
-//
-//        DataStream<PreFraudTransactionData> dataStream = aStream.union(notaStream);
-
-        /*
-        //  top N
-
-        DataStream<Tuple3<String, Instant, Integer>> result = eventDataStream.map(
-                new MapFunction<PreFraudTransactionData, Tuple3<String, Instant, Integer>>() {
-                    @Override
-                    public Tuple3<String, Instant, Integer> map(PreFraudTransactionData preFraudTransactionData) throws Exception {
-                        return new Tuple3(preFraudTransactionData.paymentIntentId, Instant.ofEpochMilli(preFraudTransactionData.createAt), preFraudTransactionData.num);
-                    }
-                });
-
-        tableEnv.createTemporaryView("events", result,
-                Schema.newBuilder()
-                        .columnByExpression("rowtime", "CAST(f1 AS TIMESTAMP_LTZ(3))")
-                        .watermark("rowtime", "rowtime - INTERVAL '10' SECOND")
-                        .build()
-                );
-
-        String topNSql =
-                " SELECT * FROM (" +
-                        " SELECT" +
-                        "   f0, f1, f2, rowtime " +
-                        "   ,ROW_NUMBER() OVER (" +
-                        "       PARTITION BY f0 " +
-                        "       ORDER BY f1 DESC " +
-                        "     ) AS row_num " +
-                        "   FROM events )" +
-                        " WHERE row_num = 1";
-
-        Table table = tableEnv.sqlQuery(topNSql);
-
-        DataStream<Row> dataStream = tableEnv.toChangelogStream(table);
-
-         */
-
 
         tableEnv.createTemporaryView("events", eventDataStream,
                 $("paymentIntentId"),
@@ -170,22 +128,11 @@ public class OverPartitionMain {
                 "     ) AS sum_num " +
                 "   FROM events ";
 
-//        String groupSql =
-//                "SELECT " +
-//                        "   paymentIntentId, deviceIp, SUM(num) FROM events " +
-//                        "   GROUP BY paymentIntentId, deviceIp";
-
         Table table = tableEnv.sqlQuery(sql);
 
         DataStream<Row> dataStream = tableEnv.toDataStream(table);
-//        tableEnv.createTemporaryView("intent_device", table);
-
-
-
-//
-//        dataStream.filter(x -> x.getKind().equals(RowKind.INSERT) || x.getKind().equals(RowKind.UPDATE_AFTER)).print();
 
         dataStream.print();
-        env.execute("WindowFlink");
+        env.execute("OverPartition");
     }
 }
