@@ -32,7 +32,8 @@ public class UdsJoin {
                 "   'connector' = 'redis', " +
                 "   'host' = 'localhost', " +
                 "   'port' = '6379', " +
-                "   'password' = '123456' " +
+                "   'password' = '123456', " +
+                "   'datatype' = 'list' " +
                 ")";
         String createMainTable = "CREATE TABLE Orders (" +
                 "   orderId STRING, " +
@@ -41,7 +42,7 @@ public class UdsJoin {
                 "   ) WITH ( " +
                 "   'connector' = 'datagen', " +
                 "   'rows-per-second' = '1', " +
-                "   'fields.orderId.length' = '6', " +
+                "   'fields.orderId.length' = '1', " +
                 "   'fields.total.max' = '10', " +
                 "   'fields.total.min' = '1' " +
                 ");";
