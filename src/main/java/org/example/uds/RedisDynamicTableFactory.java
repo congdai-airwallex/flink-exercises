@@ -22,6 +22,9 @@ public class RedisDynamicTableFactory implements DynamicTableSourceFactory {
     public static final ConfigOption<String> PASSWORD = ConfigOptions.key("password")
             .stringType()
             .noDefaultValue();
+    public static final ConfigOption<String> DATATYPE = ConfigOptions.key("datatype")
+            .stringType()
+            .noDefaultValue();
     @Override
     public String factoryIdentifier() {
         return "redis"; // used for matching to `connector = '...'`
@@ -32,6 +35,7 @@ public class RedisDynamicTableFactory implements DynamicTableSourceFactory {
         options.add(HOSTNAME);
         options.add(PORT);
         options.add(PASSWORD);
+        options.add(DATATYPE);
         return options;
     }
 
@@ -51,10 +55,11 @@ public class RedisDynamicTableFactory implements DynamicTableSourceFactory {
         final String hostname = options.get(HOSTNAME);
         final int port = options.get(PORT);
         final String password = options.get(PASSWORD);
+        final String datatype = options.get(DATATYPE);
         // derive the produced data type (excluding computed columns) from the catalog table
         final DataType producedDataType =
                 context.getCatalogTable().getResolvedSchema().toPhysicalRowDataType();
 
-        return new RedisDynamicTableSource(hostname, port, password, producedDataType);
+        return new RedisDynamicTableSource(hostname, port, password, datatype, producedDataType);
     }
 }
