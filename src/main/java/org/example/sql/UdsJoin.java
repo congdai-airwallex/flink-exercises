@@ -14,6 +14,10 @@ public class UdsJoin {
 
     public static void main(String[] args) throws Exception {
         ParameterTool parameters = ParameterTool.fromArgs(args);
+        final String host = parameters.get("host", "localhost");
+        final int port = parameters.getInt("port", 6379);
+        final String password = parameters.get("password", "");
+        final String dataType = parameters.get("redis-datatype", "list");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
@@ -30,10 +34,10 @@ public class UdsJoin {
                 "   mvalue DOUBLE " +
                 ") WITH (" +
                 "   'connector' = 'redis', " +
-                "   'host' = 'localhost', " +
-                "   'port' = '6379', " +
-                "   'password' = '123456', " +
-                "   'datatype' = 'list' " +
+                "   'host' = '" + host + "', " +
+                "   'port' = '" + port + "', " +
+                "   'password' = '" + password + "', " +
+                "   'datatype' = '" + dataType + "' " +
                 ")";
         String createMainTable = "CREATE TABLE Orders (" +
                 "   orderId STRING, " +
