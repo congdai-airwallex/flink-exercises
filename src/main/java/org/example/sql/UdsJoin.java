@@ -24,11 +24,15 @@ public class UdsJoin {
 
         String createRedisTable = "CREATE TEMPORARY TABLE test (" +
                 "   rKey STRING, " +
-                "   rValue STRING) WITH (" +
+                "   version INT, " +
+                "   ts BIGINT, " +
+                "   valueType STRING, " +
+                "   mvalue DOUBLE " +
+                ") WITH (" +
                 "   'connector' = 'redis', " +
-                "   'host' = 'xxxxx', " +
-                "   'port' = '123', " +
-                "   'password' = 'xxxx' " +
+                "   'host' = 'localhost', " +
+                "   'port' = '6379', " +
+                "   'password' = '123456' " +
                 ")";
         String createMainTable = "CREATE TABLE Orders (" +
                 "   orderId STRING, " +
@@ -46,7 +50,7 @@ public class UdsJoin {
         tableEnv.executeSql(createMainTable);
 
         String joinSql = " SELECT " +
-                "   o.orderId, o.total, t.rKey, t.rValue" +
+                "   o.orderId, o.total, t.rKey, t.version, t.ts, t.valueType, t.mvalue " +
                 "   FROM Orders AS o " +
                 "   LEFT JOIN test FOR SYSTEM_TIME AS OF o.proc_time AS t " +
                 "   ON o.orderId = t.rKey;";
