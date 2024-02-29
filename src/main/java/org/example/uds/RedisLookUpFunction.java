@@ -35,9 +35,9 @@ public class RedisLookUpFunction extends TableFunction<RowData> {
     @Override
     public void open(FunctionContext context)  {
         parsingTypes = producedDataType.getLogicalType().getChildren();
-        for(int i = 0; i< parsingTypes.size(); i++) {
-            System.out.println(parsingTypes.get(i).getTypeRoot());
-        }
+//        for(int i = 0; i< parsingTypes.size(); i++) {
+//            System.out.println(parsingTypes.get(i).getTypeRoot());
+//        }
         try {
             RedisClient client = RedisClient.create(
                     RedisURI.Builder.redis(hostname, port).withPassword(password).withTimeout(Duration.ofSeconds(3)).build()
