@@ -19,7 +19,7 @@ public class RedisDynamicTableSource implements LookupTableSource {
 
     @Override
     public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext context) {
-        return TableFunctionProvider.of(new RedisLookUpFunction(hostname, port, password));
+        return TableFunctionProvider.of(new RedisLookUpFunction(hostname, port, password, producedDataType));
     }
 
     @Override
