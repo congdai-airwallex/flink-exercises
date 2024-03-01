@@ -51,7 +51,12 @@
             <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-flink1.15-bundle</artifactId>
+            <version>0.14.1</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- when package to jar, provided or running on IDEA, compile-->
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-core -->

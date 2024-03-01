@@ -4,6 +4,7 @@ import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -17,6 +18,8 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.example.model.Event;
+import org.example.model.PayData;
+import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.EventProcess;
 import org.example.util.FlinkUtil;
 import org.slf4j.Logger;
@@ -77,30 +80,10 @@ public class WindowMain {
                                 .withIdleness(Duration.ofMillis(300))
                 );
 
-
+        WatermarkStrategy<Event> wt = new BoundedOutOfOrdernessStrategy<>(0L);
         DataStream<Event> reducedStream = eventTimeData.union(eventTimeData2)
                 .assignTimestampsAndWatermarks(
-                        new WatermarkStrategy<Event>() {
-                            @Override
-                            public WatermarkGenerator<Event> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                                return new WatermarkGenerator<Event>() {
-                                    private long currentMaxTimestamp;
-                                    @Override
-                                    public void onEvent(Event event, long eventTimestamp, WatermarkOutput output) {
-                                        currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                        output.emitWatermark(new Watermark(currentMaxTimestamp));
-                                    }
-
-                                    @Override
-                                    public void onPeriodicEmit(WatermarkOutput output) {
-                                        // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                        output.emitWatermark(new Watermark(currentMaxTimestamp));
-                                    }
-                                };
-                            }
-                        }
-                                .withTimestampAssigner((event, timestamp) -> event.timestamp)
-                                .withIdleness(Duration.ofMillis(300))
+                        wt.withTimestampAssigner((event, timestamp) -> event.timestamp).withIdleness(Duration.ofSeconds(1))
                 )
                 .keyBy(x -> x.type)
                 .window(TumblingEventTimeWindows.of(Time.days(1)))

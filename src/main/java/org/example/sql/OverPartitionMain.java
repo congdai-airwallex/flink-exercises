@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 import org.example.model.PreTxData;
+import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class OverPartitionMain {
 
         DataStream<String> sourceStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
+        WatermarkStrategy<PreTxData> wt = new BoundedOutOfOrdernessStrategy<>(0L);
 
         DataStream<PreTxData> eventDataStream = sourceStream.flatMap(new RichFlatMapFunction<String, PreTxData>() {
             private Gson gson;
@@ -64,27 +66,7 @@ public class OverPartitionMain {
                 }
             }
         }).assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PreTxData>() {
-                    @Override
-                    public WatermarkGenerator<PreTxData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PreTxData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PreTxData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }
-                .withTimestampAssigner((event, timestamp) -> event.createAt)
-                .withIdleness(Duration.ofSeconds(1))
+            wt.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofSeconds(1))
         );
 
         tableEnv.createTemporaryView("events", eventDataStream,
