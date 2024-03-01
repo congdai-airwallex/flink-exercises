@@ -40,8 +40,8 @@ or when the row exceeds the max time to live lookup.cache.ttl.
  */
 
 
-public class LookupJoinMain {
-    private static final Logger logger = LoggerFactory.getLogger(LookupJoinMain.class);
+public class LookupJoinPG {
+    private static final Logger logger = LoggerFactory.getLogger(LookupJoinPG.class);
 
     public static void main(String[] args) throws Exception {
         ParameterTool parameters = ParameterTool.fromArgs(args);
@@ -99,6 +99,6 @@ public class LookupJoinMain {
         Table t = tableEnv.sqlQuery(joinSql);
         tableEnv.toDataStream(t).print();
 
-        env.execute("LookupJoin");
+        env.execute("LookupJoinPG");
     }
 }
