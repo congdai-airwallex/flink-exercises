@@ -12,6 +12,7 @@ import org.apache.flink.util.Collector;
 import org.example.model.PreTxData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
+import org.example.util.PreTxDataParserRichFlatMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,28 +46,12 @@ public class OverPartitionMain {
 
         DataStream<String> sourceStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
-        WatermarkStrategy<PreTxData> wt = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PreTxData> wm = new BoundedOutOfOrdernessStrategy<>(0L);
 
-        DataStream<PreTxData> eventDataStream = sourceStream.flatMap(new RichFlatMapFunction<String, PreTxData>() {
-            private Gson gson;
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                gson = new Gson();
-            }
-            @Override
-            public void flatMap(String s, Collector<PreTxData> collector) throws Exception {
-                PreTxData data = null;
-                try {
-                    data = gson.fromJson(s, PreTxData.class);
-                } catch (Exception e) {
-
-                }
-                if(data != null) {
-                    collector.collect(data);
-                }
-            }
-        }).assignTimestampsAndWatermarks(
-            wt.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofSeconds(1))
+        DataStream<PreTxData> eventDataStream = sourceStream
+                .flatMap(new PreTxDataParserRichFlatMap())
+                .assignTimestampsAndWatermarks(
+            wm.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofSeconds(1))
         );
 
         tableEnv.createTemporaryView("events", eventDataStream,
