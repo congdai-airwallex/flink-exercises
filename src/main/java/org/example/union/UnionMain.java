@@ -11,18 +11,20 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.example.model.PayFilterData;
+import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import com.google.gson.Gson;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
-
 import static org.apache.flink.table.api.Expressions.*;
 
+/*
+* union + sql partition over may lost data
+* */
 public class UnionMain {
     private static final Logger logger = LoggerFactory.getLogger(UnionMain.class);
 
@@ -59,6 +61,12 @@ public class UnionMain {
         DataStream<String> postStream = env
                 .fromSource(postSource, WatermarkStrategy.noWatermarks(), "Kafka Source");
 
+        WatermarkStrategy<PayFilterData> wm1 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PayFilterData> wm2 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PayFilterData> wm3 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PayFilterData> wm4 = new BoundedOutOfOrdernessStrategy<>(0L);
+
+
         DataStream<PayFilterData> preDataStream = preStream.flatMap(new RichFlatMapFunction<String, PayFilterData>() {
             private Gson gson;
             @Override
@@ -78,28 +86,9 @@ public class UnionMain {
                     collector.collect(data);
                 }
             }
-        })
-                .assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PayFilterData>() {
-                    @Override
-                    public WatermarkGenerator<PayFilterData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PayFilterData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PayFilterData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                //output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                //System.out.printf("preStream emit: %d\n", currentMaxTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofMillis(300))
+        }).assignTimestampsAndWatermarks(
+                wm1.withTimestampAssigner((event, timestamp) -> event.createAt)
+                        .withIdleness(Duration.ofMillis(300))
         );
 
         DataStream<PayFilterData> postDataStream = postStream.flatMap(new RichFlatMapFunction<String, PayFilterData>() {
@@ -121,51 +110,15 @@ public class UnionMain {
                     collector.collect(data);
                 }
             }
-        })
-        .assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PayFilterData>() {
-                    @Override
-                    public WatermarkGenerator<PayFilterData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PayFilterData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PayFilterData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                //output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                //System.out.printf("postDataStream emit: %d\n", currentMaxTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofMillis(300))
+        }).assignTimestampsAndWatermarks(
+                wm2.withTimestampAssigner((event, timestamp) -> event.createAt)
+                        .withIdleness(Duration.ofMillis(300))
         );
 
         DataStream<PayFilterData> unionDataStream = preDataStream.union(postDataStream)
                 .assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PayFilterData>() {
-                    @Override
-                    public WatermarkGenerator<PayFilterData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PayFilterData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PayFilterData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-//                                System.out.printf("unionDataStream emit: %d\n", currentMaxTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp-100));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofMillis(300))
+                    wm3.withTimestampAssigner((event, timestamp) -> event.createAt)
+                            .withIdleness(Duration.ofMillis(300))
         );
 
         DataStream<PayFilterData> orderedDataStream = unionDataStream.process(new ProcessFunction<PayFilterData, PayFilterData>() {
@@ -176,31 +129,14 @@ public class UnionMain {
 //                    paymentFilterData.createAt = context.timerService().currentWatermark();
 //                }
                 paymentFilterData.createAt = System.currentTimeMillis();
-//                System.out.printf("processElement createAt: %d\n", paymentFilterData.createAt);
                 collector.collect(paymentFilterData);
             }
         }).assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PayFilterData>() {
-                    @Override
-                    public WatermarkGenerator<PayFilterData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PayFilterData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PayFilterData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                            }
+                wm4.withTimestampAssigner((event, timestamp) -> event.createAt)
+                        .withIdleness(Duration.ofMillis(300))
+        );
 
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                // System.out.printf("orderedDataStream emit: %d\n", currentMaxTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofMillis(300)));
-
-        tableEnv.createTemporaryView("temp", unionDataStream,
+        tableEnv.createTemporaryView("temp", orderedDataStream,
                 $("clientId"),
                 $("paymentId"),
                 $("amountusd"),

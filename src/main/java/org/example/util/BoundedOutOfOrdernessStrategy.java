@@ -13,7 +13,7 @@ public class BoundedOutOfOrdernessStrategy<T> implements WatermarkStrategy {
         @Override
         public void onEvent(T event, long eventTimestamp, WatermarkOutput output) {
             currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-            output.emitWatermark(new Watermark(currentMaxTimestamp-maxOutOfOrderness));
+            //output.emitWatermark(new Watermark(currentMaxTimestamp-maxOutOfOrderness));
         }
 
         @Override

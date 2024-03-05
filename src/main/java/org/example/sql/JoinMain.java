@@ -2,7 +2,6 @@ package org.example.sql;
 
 import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.*;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
@@ -13,8 +12,9 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.util.Collector;
 import org.example.model.PreTxData;
+import org.example.util.BoundedOutOfOrdernessStrategy;
+import org.example.util.PreTxDataParserRichFlatMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,84 +80,21 @@ public class JoinMain {
         DataStream<String> postStream = env
                 .fromSource(postSource, WatermarkStrategy.noWatermarks(), "Kafka Source");
 
-        DataStream<PreTxData> preDataStream = preStream.flatMap(new RichFlatMapFunction<String, PreTxData>() {
-            private Gson gson;
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                gson = new Gson();
-            }
-            @Override
-            public void flatMap(String s, Collector<PreTxData> collector) throws Exception {
-                PreTxData data = null;
-                try {
-                    data = gson.fromJson(s, PreTxData.class);
-                } catch (Exception e) {
+        WatermarkStrategy<PreTxData> wm1 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PreTxData> wm2 = new BoundedOutOfOrdernessStrategy<>(0L);
 
-                }
-                if(data != null) {
-                    collector.collect(data);
-                }
-            }
-        }).assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PreTxData>() {
-                    @Override
-                    public WatermarkGenerator<PreTxData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PreTxData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PreTxData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofSeconds(1))
+        DataStream<PreTxData> preDataStream = preStream
+                .flatMap(new PreTxDataParserRichFlatMap())
+                .assignTimestampsAndWatermarks(
+                        wm1.withTimestampAssigner((event, timestamp) -> event.createAt)
+                                .withIdleness(Duration.ofSeconds(1))
         );
 
-        DataStream<PreTxData> postDataStream = postStream.flatMap(new RichFlatMapFunction<String, PreTxData>() {
-            private Gson gson;
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                gson = new Gson();
-            }
-            @Override
-            public void flatMap(String s, Collector<PreTxData> collector) throws Exception {
-                PreTxData data = null;
-                try {
-                    data = gson.fromJson(s, PreTxData.class);
-                } catch (Exception e) {
-
-                }
-                if(data != null) {
-                    collector.collect(data);
-                }
-            }
-        }).assignTimestampsAndWatermarks(
-                new WatermarkStrategy<PreTxData>() {
-                    @Override
-                    public WatermarkGenerator<PreTxData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-                        return new WatermarkGenerator<PreTxData>() {
-                            private long currentMaxTimestamp;
-                            @Override
-                            public void onEvent(PreTxData event, long eventTimestamp, WatermarkOutput output) {
-                                currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-
-                            @Override
-                            public void onPeriodicEmit(WatermarkOutput output) {
-                                // emit the watermark as current highest timestamp minus the out-of-orderness bound
-                                output.emitWatermark(new Watermark(currentMaxTimestamp));
-                            }
-                        };
-                    }
-                }.withTimestampAssigner((event, timestamp) -> event.createAt).withIdleness(Duration.ofSeconds(1))
+        DataStream<PreTxData> postDataStream = postStream
+                .flatMap(new PreTxDataParserRichFlatMap())
+                .assignTimestampsAndWatermarks(
+                        wm2.withTimestampAssigner((event, timestamp) -> event.createAt)
+                                .withIdleness(Duration.ofSeconds(1))
         );
 
         tableEnv.createTemporaryView("pre", preDataStream,
