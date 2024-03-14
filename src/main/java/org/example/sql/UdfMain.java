@@ -1,6 +1,7 @@
 package org.example.sql;
 
 import org.apache.flink.api.common.eventtime.*;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -9,15 +10,14 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.util.Collector;
 import org.example.model.PayData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
+import org.example.util.PayDataParserRichFlatMap;
 import org.example.util.Stddev;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.Duration;
-import com.google.gson.Gson;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -49,27 +49,13 @@ public class UdfMain {
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
         WatermarkStrategy<Tuple2<Long, PayData>> wt = new BoundedOutOfOrdernessStrategy<>(0L);
 
-        DataStream<Tuple2<Long, PayData>> eventDataStream = sourceStream.flatMap(new RichFlatMapFunction<String, Tuple2<Long, PayData>>() {
-            private Gson gson;
-
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                gson = new Gson();
-            }
-
-            @Override
-            public void flatMap(String s, Collector<Tuple2<Long, PayData>> collector) throws Exception {
-                PayData data = null;
-                try {
-                    data = gson.fromJson(s, PayData.class);
-                } catch (Exception e) {
-
-                }
-                if (data != null) {
-                    collector.collect(new Tuple2<>(data.createAt, data));
-                }
-            }
-        }).assignTimestampsAndWatermarks(
+        DataStream<Tuple2<Long, PayData>> eventDataStream = sourceStream.flatMap(new PayDataParserRichFlatMap())
+                .map(new MapFunction<PayData, Tuple2<Long, PayData>>() {
+                    @Override
+                    public Tuple2<Long, PayData> map(PayData value) throws Exception {
+                        return new Tuple2(value.createAt, value);
+                    }
+                }).assignTimestampsAndWatermarks(
                 wt.withTimestampAssigner((event, timestamp) -> event.f0).withIdleness(Duration.ofSeconds(1))
         );
 

@@ -1,6 +1,7 @@
 package org.example.sql;
 
 import org.apache.flink.api.common.eventtime.*;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -14,6 +15,7 @@ import org.example.model.PayData;
 import org.example.model.AmountData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
+import org.example.util.PayDataParserRichFlatMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,28 +52,17 @@ public class StddevMain {
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
         WatermarkStrategy<Tuple2<Long, PayData>> wt = new BoundedOutOfOrdernessStrategy<>(0L);
 
-        DataStream<Tuple2<Long, PayData>> eventDataStream = sourceStream.flatMap(new RichFlatMapFunction<String, Tuple2<Long, PayData>>() {
-            private Gson gson;
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                gson = new Gson();
-            }
-            @Override
-            public void flatMap(String s, Collector<Tuple2<Long, PayData>> collector) throws Exception {
-                PayData data = null;
-                try {
-                    data = gson.fromJson(s, PayData.class);
-                    data.createAt = System.currentTimeMillis();
-                } catch (Exception e) {
-
-                }
-                if(data != null) {
-                    collector.collect(new Tuple2<>(data.createAt, data));
-                }
-            }
-        }).assignTimestampsAndWatermarks(
-                wt.withTimestampAssigner((event, timestamp) -> event.f0).withIdleness(Duration.ofSeconds(1))
-        );
+        DataStream<Tuple2<Long, PayData>> eventDataStream = sourceStream
+                .flatMap(new PayDataParserRichFlatMap())
+                .map(new MapFunction<PayData, Tuple2<Long, PayData>>() {
+                    @Override
+                    public Tuple2<Long, PayData> map(PayData value) throws Exception {
+                        return new Tuple2(System.currentTimeMillis(), value);
+                    }
+                }).assignTimestampsAndWatermarks(
+                    wt.withTimestampAssigner((event, timestamp) -> event.f0)
+                            .withIdleness(Duration.ofSeconds(1))
+                );
 
         tableEnv.createTemporaryView("events", eventDataStream, $("f0"),  $("f1"), $("f0").rowtime().as("f2"));
 
