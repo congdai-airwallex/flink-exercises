@@ -1,5 +1,7 @@
 package org.example.model;
 
+import com.google.gson.Gson;
+
 public class PayData {
     public String paymentAttemptId;
     public String partitionKey;
@@ -11,5 +13,9 @@ public class PayData {
         this.partitionKey = partitionKey;
         this.aggregationKeyMappingValue = aggregationKeyMappingValue;
         this.createAt = createAt;
+    }
+    public String toString() {
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 }
