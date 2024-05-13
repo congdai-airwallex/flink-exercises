@@ -43,7 +43,7 @@ public class OverPartitionMain {
 
         DataStream<String> sourceStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
-        WatermarkStrategy<PreTxData> wm = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PreTxData> wm = new BoundedOutOfOrdernessStrategy<>("",0L);
 
         DataStream<PreTxData> eventDataStream = sourceStream
                 .flatMap(new PreTxDataParserRichFlatMap())

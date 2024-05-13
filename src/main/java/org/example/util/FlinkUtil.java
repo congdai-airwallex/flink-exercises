@@ -7,6 +7,8 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 public class FlinkUtil {
@@ -25,5 +27,16 @@ public class FlinkUtil {
                 org.apache.flink.api.common.time.Time.of(5, TimeUnit.SECONDS),
                 org.apache.flink.api.common.time.Time.of(10, TimeUnit.SECONDS)
         ));
+    }
+    public static void logInfo(String format, Object... args) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Define the desired date-time format pattern
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+        // Format the current date and time using the pattern
+        String formattedDateTime = now.format(formatter);
+        System.out.printf("[%s]\t", formattedDateTime);
+        System.out.printf(format, args);
     }
 }

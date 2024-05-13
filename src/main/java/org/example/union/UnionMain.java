@@ -61,10 +61,10 @@ public class UnionMain {
         DataStream<String> postStream = env
                 .fromSource(postSource, WatermarkStrategy.noWatermarks(), "Kafka Source");
 
-        WatermarkStrategy<PayFilterData> wm1 = new BoundedOutOfOrdernessStrategy<>(0L);
-        WatermarkStrategy<PayFilterData> wm2 = new BoundedOutOfOrdernessStrategy<>(0L);
-        WatermarkStrategy<PayFilterData> wm3 = new BoundedOutOfOrdernessStrategy<>(0L);
-        WatermarkStrategy<PayFilterData> wm4 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PayFilterData> wm1 = new BoundedOutOfOrdernessStrategy<>("", 0L);
+        WatermarkStrategy<PayFilterData> wm2 = new BoundedOutOfOrdernessStrategy<>("",0L);
+        WatermarkStrategy<PayFilterData> wm3 = new BoundedOutOfOrdernessStrategy<>("",0L);
+        WatermarkStrategy<PayFilterData> wm4 = new BoundedOutOfOrdernessStrategy<>("",0L);
 
 
         DataStream<PayFilterData> preDataStream = preStream.flatMap(new RichFlatMapFunction<String, PayFilterData>() {

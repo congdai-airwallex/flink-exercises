@@ -70,7 +70,7 @@ public class SingleSourceMultiSink {
 
         DataStream<String> sourceStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
-        WatermarkStrategy<Tuple2<Long, PayData>> wt = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<Tuple2<Long, PayData>> wt = new BoundedOutOfOrdernessStrategy<>("", 0L);
 
         DataStream<Tuple2<Long, PayData>> eventDataStream = sourceStream.flatMap(new PayDataParserRichFlatMap())
                 .map(new MapFunction<PayData, Tuple2<Long, PayData>>() {

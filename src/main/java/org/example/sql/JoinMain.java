@@ -63,8 +63,8 @@ public class JoinMain {
         DataStream<String> postStream = env
                 .fromSource(postSource, WatermarkStrategy.noWatermarks(), "Kafka Source");
 
-        WatermarkStrategy<PreTxData> wm1 = new BoundedOutOfOrdernessStrategy<>(0L);
-        WatermarkStrategy<PreTxData> wm2 = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<PreTxData> wm1 = new BoundedOutOfOrdernessStrategy<>("",0L);
+        WatermarkStrategy<PreTxData> wm2 = new BoundedOutOfOrdernessStrategy<>("",0L);
 
         DataStream<PreTxData> preDataStream = preStream
                 .flatMap(new PreTxDataParserRichFlatMap())
