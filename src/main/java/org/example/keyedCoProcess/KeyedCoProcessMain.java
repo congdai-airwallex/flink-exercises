@@ -62,8 +62,8 @@ public class KeyedCoProcessMain {
         DataStream<String> postStream = env
                 .fromSource(paymentSource, WatermarkStrategy.noWatermarks(), "Kafka Source 2");
 
-        WatermarkStrategy<PreTxData> wt1 = new BoundedOutOfOrdernessStrategy<>(1000L);
-        WatermarkStrategy<PayFilterData> wt2 = new BoundedOutOfOrdernessStrategy<>(1000L);
+        WatermarkStrategy<PreTxData> wt1 = new BoundedOutOfOrdernessStrategy<>("",1000L);
+        WatermarkStrategy<PayFilterData> wt2 = new BoundedOutOfOrdernessStrategy<>("",1000L);
 
         DataStream<PreTxData> preDataStream = preStream
                 .flatMap(new PreTxDataParserRichFlatMap())

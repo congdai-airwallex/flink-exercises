@@ -80,7 +80,7 @@ public class WindowMain {
                                 .withIdleness(Duration.ofMillis(300))
                 );
 
-        WatermarkStrategy<Event> wt = new BoundedOutOfOrdernessStrategy<>(0L);
+        WatermarkStrategy<Event> wt = new BoundedOutOfOrdernessStrategy<>("", 0L);
         DataStream<Event> reducedStream = eventTimeData.union(eventTimeData2)
                 .assignTimestampsAndWatermarks(
                         wt.withTimestampAssigner((event, timestamp) -> event.timestamp).withIdleness(Duration.ofSeconds(1))
