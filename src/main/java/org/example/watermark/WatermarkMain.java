@@ -62,8 +62,13 @@ public class WatermarkMain {
         DataStream<String> postStream = env
                 .fromSource(postSource, WatermarkStrategy.noWatermarks(), "Kafka Source");
 
+<<<<<<<< HEAD:src/main/java/org/example/watermark/WatermarkMain.java
         WatermarkStrategy<PreTxData> wm1 = new BoundedOutOfOrdernessStrategy<>("pre", 0L);
         WatermarkStrategy<PreTxData> wm2 = new BoundedOutOfOrdernessStrategy<>("post", 0L);
+========
+        WatermarkStrategy<PreTxData> wm1 = new BoundedOutOfOrdernessStrategy<>("",0L);
+        WatermarkStrategy<PreTxData> wm2 = new BoundedOutOfOrdernessStrategy<>("",0L);
+>>>>>>>> 57d3ce7feea2745c54fc0ab64f821893a51d9dc4:src/main/java/org/example/sql/JoinMain.java
 
         DataStream<PreTxData> preDataStream = preStream
                 .flatMap(new PreTxDataParserRichFlatMap())
