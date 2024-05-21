@@ -108,7 +108,7 @@ public class DataStreamToTable {
 //     table schema can define physical columns manually
 //     2. Event time and Watermark
 //     add computed columns (in this case for creating a rowtime attribute column) and a custom watermark strategy
-//     WARNNING !!!!!!!! source datastream CANNOT assignTimestampsAndWatermarks
+//     WARNING !!!!!!!! source datastream CANNOT assignTimestampsAndWatermarks
         tableEnv.createTemporaryView(
                 "post",
                 postDataStream,
