@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-public class RegularJoin {
-    private static final Logger logger = LoggerFactory.getLogger(RegularJoin.class);
+public class Joins {
+    private static final Logger logger = LoggerFactory.getLogger(Joins.class);
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -59,16 +59,32 @@ public class RegularJoin {
         tableEnv.executeSql(createPreTable);
         tableEnv.executeSql(createPostTable);
 
+        // https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#outer-equi-join
+        // regular join is like a big memory table, but returns the change log
         String regularJoin =
-                " SELECT pre.paymentAttemptId, sum(post.num) " +
+                " SELECT 'regular', pre.paymentAttemptId, post.paymentAttemptId " +
                 "   FROM pre FULL JOIN post " +
                 "   on pre.deviceIp = post.deviceIp " +
-                "   WHERE post.event_time > pre.event_time - INTERVAL '1' DAY AND post.event_time < pre.event_time " +
-                "   GROUP BY pre.paymentAttemptId";
+                "   WHERE pre.paymentAttemptId is NULL OR post.paymentAttemptId is NULL " +
+                "   OR (post.event_time > pre.event_time - INTERVAL '1' DAY AND post.event_time < pre.event_time) ";
 
-        Table t = tableEnv.sqlQuery(regularJoin);
-        tableEnv.toChangelogStream(t).print();
+        Table t1 = tableEnv.sqlQuery(regularJoin);
+        tableEnv.toChangelogStream(t1).print();
 
-        env.execute("RegularJoin");
+        // Returns a simple Cartesian product restricted by the join condition and a time constraint.
+        // An interval join requires at least one equi-join predicate and a join condition that bounds the time on both sides.
+        // WARNING: return only two sides all have values, similar to INNER JOIN,
+        // but Since time attributes are quasi-monotonic increasing,
+        // Flink can remove old values from its state without affecting the correctness of the result.
+        String intervalJoin =
+                " SELECT 'interval', pre.paymentAttemptId, post.paymentAttemptId " +
+                "   FROM pre, post " +
+                "   WHERE pre.deviceIp = post.deviceIp " +
+                "   AND post.event_time > pre.event_time - INTERVAL '1' DAY AND post.event_time < pre.event_time ";
+
+        Table t2 = tableEnv.sqlQuery(intervalJoin);
+        tableEnv.toChangelogStream(t2).print();
+
+        env.execute("Joins");
     }
 }
