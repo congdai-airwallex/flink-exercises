@@ -1,4 +1,4 @@
-package org.example.sql;
+package org.example.jobs.sql;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;

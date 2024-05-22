@@ -159,7 +159,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.example.union.UnionMain</mainClass>
+                            <mainClass>org.example.jobs.union.UnionMain</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

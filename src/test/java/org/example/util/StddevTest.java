@@ -12,6 +12,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.Row;
 
+import org.example.udf.Stddev;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

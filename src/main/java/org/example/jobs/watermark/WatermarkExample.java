@@ -1,4 +1,4 @@
-package org.example.watermark;
+package org.example.jobs.watermark;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -17,16 +17,25 @@ import org.example.util.FlinkUtil;
 import org.example.util.PreTxDataParserRichFlatMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
 import java.time.Duration;
-
 import static org.apache.flink.table.api.Expressions.$;
 import static org.example.util.FlinkUtil.logInfo;
 
-public class WatermarkMain {
-    private static final Logger logger = LoggerFactory.getLogger(WatermarkMain.class);
+/*
+    To study how watermark is generated in
+        1. source
+        2. union
+        3. union with assignTimestampsAndWatermarks
+        4. multiple-parallelisms
+     and how to decrease the latency if watermark affects the output of computation
+     solution:
+        1. set env.getConfig().setAutoWatermarkInterval() to small number
+        2. set withIdleness() to small number
+     WARNING: it may cause data loss
+ */
+public class WatermarkExample {
+    private static final Logger logger = LoggerFactory.getLogger(WatermarkExample.class);
 
     public static void main(String[] args) throws Exception {
 

@@ -1,4 +1,4 @@
-package org.example.costsaving;
+package org.example.jobs.costsaving;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.functions.MapFunction;

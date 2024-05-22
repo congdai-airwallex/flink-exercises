@@ -1,4 +1,4 @@
-package org.example.sql;
+package org.example.jobs.sql;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -21,8 +21,12 @@ import org.apache.flink.types.Row;
 
 import static org.apache.flink.table.api.Expressions.*;
 
-public class OverPartitionMain {
-    private static final Logger logger = LoggerFactory.getLogger(OverPartitionMain.class);
+/*
+   WARNING: over partition function computation is triggered by watermark
+   SO it may lose some late data !!!!!
+ */
+public class OverPartition {
+    private static final Logger logger = LoggerFactory.getLogger(OverPartition.class);
 
     public static void main(String[] args) throws Exception {
 

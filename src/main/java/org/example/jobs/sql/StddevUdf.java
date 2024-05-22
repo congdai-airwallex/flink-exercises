@@ -1,8 +1,7 @@
-package org.example.sql;
+package org.example.jobs.sql;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
@@ -14,7 +13,7 @@ import org.example.model.PayData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
 import org.example.util.PayDataParserRichFlatMap;
-import org.example.util.Stddev;
+import org.example.udf.Stddev;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.Duration;
@@ -24,8 +23,11 @@ import org.apache.flink.types.Row;
 
 import static org.apache.flink.table.api.Expressions.*;
 
-public class UdfMain {
-    private static final Logger logger = LoggerFactory.getLogger(UdfMain.class);
+/*
+    Since flink original stddev function has some bugs, we implement it by user defined aggregator function
+ */
+public class StddevUdf {
+    private static final Logger logger = LoggerFactory.getLogger(StddevUdf.class);
 
     public static void main(String[] args) throws Exception {
 

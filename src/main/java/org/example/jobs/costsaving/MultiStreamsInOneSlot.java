@@ -1,4 +1,4 @@
-package org.example.costsaving;
+package org.example.jobs.costsaving;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
