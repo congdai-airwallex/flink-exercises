@@ -10,6 +10,9 @@ import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
+/**
+ * in this example, there are 3 streams in one job
+ */
 public class MultiStreamsInOneSlot {
     private static final Logger logger = LoggerFactory.getLogger(MultiStreamsInOneSlot.class);
 

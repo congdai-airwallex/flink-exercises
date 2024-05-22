@@ -19,10 +19,12 @@ import java.time.Duration;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
-
 import static org.apache.flink.table.api.Expressions.*;
 
 
+/**
+ * in this example, there are only 1 stream but 3 sinker use one common source
+ */
 public class SingleSourceMultiSink {
     private static final Logger logger = LoggerFactory.getLogger(SingleSourceMultiSink.class);
 
