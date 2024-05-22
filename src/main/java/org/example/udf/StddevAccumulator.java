@@ -1,4 +1,4 @@
-package org.example.util;
+package org.example.udf;
 
 import org.apache.flink.table.api.dataview.ListView;
 

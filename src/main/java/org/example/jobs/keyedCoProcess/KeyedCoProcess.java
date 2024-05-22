@@ -1,4 +1,4 @@
-package org.example.keyedCoProcess;
+package org.example.jobs.keyedCoProcess;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -27,8 +27,8 @@ import java.time.Duration;
 import com.google.gson.Gson;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-public class KeyedCoProcessMain {
-    private static final Logger logger = LoggerFactory.getLogger(KeyedCoProcessMain.class);
+public class KeyedCoProcess {
+    private static final Logger logger = LoggerFactory.getLogger(KeyedCoProcess.class);
 
     public static void main(String[] args) throws Exception {
 

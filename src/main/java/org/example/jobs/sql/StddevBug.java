@@ -1,8 +1,7 @@
-package org.example.sql;
+package org.example.jobs.sql;
 
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
@@ -10,7 +9,6 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.util.Collector;
 import org.example.model.PayData;
 import org.example.model.AmountData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
@@ -21,15 +19,19 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.time.Duration;
-import com.google.gson.Gson;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
 import static org.apache.flink.table.api.Expressions.*;
 
-public class StddevMain {
-    private static final Logger logger = LoggerFactory.getLogger(StddevMain.class);
+/*
+    WARNING: if many input are of same value like 0.001,
+    flink stddev function returns nil or very small number instead of zero
+    is it bug or feature?
+ */
+public class StddevBug {
+    private static final Logger logger = LoggerFactory.getLogger(StddevBug.class);
 
     public static void main(String[] args) throws Exception {
 

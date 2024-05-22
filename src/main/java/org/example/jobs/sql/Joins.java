@@ -1,4 +1,4 @@
-package org.example.sql;
+package org.example.jobs.sql;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
