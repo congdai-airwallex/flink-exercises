@@ -10,6 +10,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YA
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.types.Row;
 import org.example.config.ComputeConf;
 import org.example.config.FeatureConf;
@@ -22,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -32,6 +34,14 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 public class DSLV2 {
     private static final Logger logger = LoggerFactory.getLogger(DSLV2.class);
 
+    // define function logic
+    public static class toUpperCase extends ScalarFunction {
+        public String eval(String ipAddress, String xxx) {
+            if (ipAddress == null || ipAddress.isEmpty()) return "";
+            return ipAddress.toUpperCase();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -41,6 +51,7 @@ public class DSLV2 {
 
         FlinkUtil.initEnvironment(env);
         env.setParallelism(2);
+        tableEnv.createTemporarySystemFunction("toUpperCase", toUpperCase.class);
 
         KafkaSource<String> preSource = KafkaSource.<String>builder()
                 .setBootstrapServers("localhost:9092")
@@ -107,7 +118,14 @@ public class DSLV2 {
          */
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        FeatureConf conf = mapper.readValue(new File("src/main/resources/feature_example.yaml"), FeatureConf.class);
+        InputStream in = DSLV2.class.getClassLoader().getResourceAsStream("feature_example.yaml");
+        FeatureConf conf;
+        if(in != null) {
+            conf = mapper.readValue(in, FeatureConf.class);
+        }else {
+            conf = mapper.readValue(new File("src/main/resources/feature_example.yaml"), FeatureConf.class);
+        }
+
         FlinkUtil.logInfo(conf.toString());
 
         List<ComputeConf> computes = conf.compute;
@@ -116,6 +134,7 @@ public class DSLV2 {
             if(compute.type.equals("createTable")) {
                 Table tmp = tableEnv.sqlQuery(compute.sql);
                 tableEnv.createTemporaryView(compute.name, tmp);
+                tableEnv.from(compute.name).printSchema();
                 //tableEnv.toDataStream(tmp).print();
             }
             if(compute.type.equals("union")) {
@@ -138,8 +157,8 @@ public class DSLV2 {
                                 .columnByMetadata("rowtime", "TIMESTAMP_LTZ(3)")
                                 .watermark("rowtime", "SOURCE_WATERMARK()")
                                 .build());
-//                tableEnv.toDataStream(tmp).print();
                 tableEnv.from(compute.name).printSchema();
+//                tableEnv.toDataStream(tmp).print();
             }
         }
         for(OutputConf output : outputs) {
