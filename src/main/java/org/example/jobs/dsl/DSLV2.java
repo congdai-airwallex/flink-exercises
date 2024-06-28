@@ -1,6 +1,7 @@
 package org.example.jobs.dsl;
 
 import org.apache.flink.api.common.eventtime.*;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -15,6 +16,7 @@ import org.apache.flink.types.Row;
 import org.example.config.ComputeConf;
 import org.example.config.FeatureConf;
 import org.example.config.OutputConf;
+import org.example.model.AmountDataV2;
 import org.example.model.PrePostTxData;
 import org.example.util.BoundedOutOfOrdernessStrategy;
 import org.example.util.FlinkUtil;
@@ -164,7 +166,17 @@ public class DSLV2 {
         for(OutputConf output : outputs) {
             Table tmp = tableEnv.sqlQuery(output.sql);
             tableEnv.createTemporaryView("output", tmp);
-            tableEnv.toDataStream(tmp).print();
+            DataStream<Row> outputStream = tableEnv.toDataStream(tmp);
+            DataStream<AmountDataV2> mainStream = outputStream.map(new MapFunction<Row, AmountDataV2>() {
+                @Override
+                public AmountDataV2 map(Row row) throws Exception {
+                    Long ts = ((Instant) row.getField("rowtime")).toEpochMilli();
+                    String id = (String) row.getField("id");
+                    Double amount = (Double) row.getField("totalAmount");
+                    return new AmountDataV2(id, amount, ts);
+                }
+            });
+            mainStream.print();
             tableEnv.dropTemporaryView("output");
         }
 
